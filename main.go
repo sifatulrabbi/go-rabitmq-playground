@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
+
+	"github.com/sifatulrabbi/go-rabitmq-playground/scheduler"
 )
 
 func main() {
@@ -35,6 +38,21 @@ func main() {
 		}
 	})
 
-	fmt.Println("starting the server...")
-	startHTTPServer(PORT, &eventStream)
+	s := scheduler.Scheduler{
+		LastTaskIndex: 0,
+		Tasks:         []scheduler.Task{},
+		Executioners:  map[string]func(body map[string]string) error{},
+	}
+	s.AddNewExecutioner("printHello", func(body map[string]string) error {
+		fmt.Println("Hello world")
+		return nil
+	})
+	s.AddNewTask(scheduler.NewSchedulerTask("print hello", "printHello", time.Now().Add(time.Second*20), map[string]string{}))
+	go s.StartInBg(s.LastTaskIndex)
+
+	forever := make(chan string)
+	<-forever
+
+	// fmt.Println("starting the server...")
+	// startHTTPServer(PORT, &eventStream)
 }
