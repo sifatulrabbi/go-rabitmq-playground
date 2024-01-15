@@ -1,32 +1,30 @@
-package main
+package server
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/sifatulrabbi/go-rabitmq-playground/eventstream"
 )
 
-func startHTTPServer(port string, es *EventStream) {
+func StartServer(port string, es *eventstream.EventStream) {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/hello", handleHello(es))
+	mux.HandleFunc("/crypto-price", handleCryptoPrice)
+	mux.HandleFunc("/jobs", handleJobsRoute(es))
 
+	fmt.Printf("Server starting at: %s\n", port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), mux); err != nil {
 		panic(err)
-	} else {
-		fmt.Printf("Server serving at port: %s\n", port)
 	}
 }
 
-func handleHello(es *EventStream) func(w http.ResponseWriter, r *http.Request) {
+func handleHello(es *eventstream.EventStream) func(w http.ResponseWriter, r *http.Request) {
 	handleGet := func(w http.ResponseWriter, r *http.Request) {
-		jsonResponse(
-			map[string]string{
-				"message": "Route is not yet implemented",
-			},
-			w,
-		)
+		jsonResponse(map[string]string{"message": "Route is not yet implemented"}, w)
 	}
 
 	handlePost := func(w http.ResponseWriter, r *http.Request) {

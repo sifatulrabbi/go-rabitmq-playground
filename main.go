@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/joho/godotenv"
 
+	"github.com/sifatulrabbi/go-rabitmq-playground/eventstream"
 	"github.com/sifatulrabbi/go-rabitmq-playground/scheduler"
+	"github.com/sifatulrabbi/go-rabitmq-playground/server"
 )
 
 func main() {
@@ -24,7 +25,7 @@ func main() {
 		panic(errors.New("`PORT` and `RABITMQ_URL` envs are required to run the server."))
 	}
 
-	eventStream := EventStream{
+	eventStream := eventstream.EventStream{
 		URL:    RABITMQ_URL,
 		Events: []string{},
 	}
@@ -43,16 +44,18 @@ func main() {
 		Tasks:         []scheduler.Task{},
 		Executioners:  map[string]func(body map[string]string) error{},
 	}
+
 	s.AddNewExecutioner("printHello", func(body map[string]string) error {
 		fmt.Println("Hello world")
 		return nil
 	})
-	s.AddNewTask(scheduler.NewSchedulerTask("print hello", "printHello", time.Now().Add(time.Second*20), map[string]string{}))
+	s.AddNewExecutioner("scheduleTask", func(body map[string]string) error {
+		fmt.Println("Scheduled task is running with body:", body)
+		return nil
+	})
+
+	// s.AddNewTask(scheduler.NewSchedulerTask("print hello", "printHello", time.Now().Add(time.Second*20), map[string]string{}))
+
 	go s.StartInBg(s.LastTaskIndex)
-
-	forever := make(chan string)
-	<-forever
-
-	// fmt.Println("starting the server...")
-	// startHTTPServer(PORT, &eventStream)
+	server.StartServer(PORT, &eventStream)
 }
