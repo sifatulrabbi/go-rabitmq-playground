@@ -12,9 +12,9 @@ import (
 func StartServer(port string, es *eventstream.EventStream) {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/hello", handleHello(es))
-	mux.HandleFunc("/crypto-price", handleCryptoPrice)
-	mux.HandleFunc("/jobs", handleJobsRoute(es))
+	mux.HandleFunc("/hello", enableCORS(handleHello(es)))
+	mux.HandleFunc("/crypto-price", enableCORS(handleCryptoPrice))
+	mux.HandleFunc("/jobs", enableCORS(handleJobsRoute(es)))
 
 	fmt.Printf("Server starting at: %s\n", port)
 	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), mux); err != nil {
@@ -58,5 +58,14 @@ func jsonResponse(data interface{}, w http.ResponseWriter) {
 	} else {
 		w.WriteHeader(http.StatusOK)
 		w.Write(b)
+	}
+}
+
+func enableCORS(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")                   // Allow any origin
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS") // Allowed methods
+		w.Header().Set("Access-Control-Allow-Headers", "*")                  // Allow any headers
+		next(w, r)
 	}
 }

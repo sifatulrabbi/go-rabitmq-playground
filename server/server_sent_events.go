@@ -71,6 +71,7 @@ func handleJobsRoute(es *eventstream.EventStream) func(w http.ResponseWriter, r 
 		}
 
 		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Connection", "keep-alive")
 
 		es.Consume("jobs", func(b []byte) {
 			data, err := formatSSEData("jobs", string(b))
@@ -84,6 +85,7 @@ func handleJobsRoute(es *eventstream.EventStream) func(w http.ResponseWriter, r 
 				return
 			}
 
+			fmt.Println("sending job info to client", string(data))
 			flusher.Flush()
 		})
 	}
@@ -103,10 +105,13 @@ func handleJobsRoute(es *eventstream.EventStream) func(w http.ResponseWriter, r 
 			return
 		}
 
+		fmt.Println("New job created", string(b))
 		jsonResponse(map[string]string{"message": "Job created"}, w)
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Printf("%s: %s\n", r.Method, r.URL.Path)
+
 		switch r.Method {
 		case http.MethodGet:
 			getJobs(w, r)
